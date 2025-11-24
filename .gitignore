@@ -1,0 +1,12 @@
+# API Keys dan file sensitif
+config.js
+.env
+*.env.local
+*.key
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
