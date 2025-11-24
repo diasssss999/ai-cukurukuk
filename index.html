@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Cukurukuk Chat</title>
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --secondary-color: #1e293b;
+            --background-color: #0f172a;
+            --sidebar-color: #1e1b4b;
+            --surface-color: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #8b5cf6;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --border-radius: 16px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--background-color) 0%, #1e1b4b 100%);
+            color: var(--text-color);
+            line-height: 1.6;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Mobile Header */
+        .mobile-header {
+            display: none;
+            padding: var(--spacing-md);
+            background: var(--sidebar-color);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1001;
+            backdrop-filter: blur(10px);
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: var(--spacing-sm);
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mobile-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-weight: 600;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 320px;
+            background: var(--sidebar-color);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            transform: translateX(0);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar.hidden {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .logo-section {
+            padding: var(--spacing-xl);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(139, 92, 246, 0.05));
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .logo-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.4rem;
+            box-shadow: 0 8px 24px rgba(124, 58, 237, 0.3);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .logo-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+
+        .logo-text p {
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            background: rgba(16, 185, 129, 0.1);
+            padding: 10px 18px;
+            border-radius: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            font-size: 0.875rem;
+            margin-top: var(--spacing-md);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .owner-info {
+            padding: var(--spacing-lg);
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .owner-info p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .instagram-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .instagram-link:hover {
+            background: rgba(139, 92, 246, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-md);
+        }
+
+        .history-title {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+        }
+
+        .history-item {
+            padding: var(--spacing-md);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius);
+            margin-bottom: var(--spacing-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(124, 58, 237, 0.3);
+            transform: translateX(4px);
+        }
+
+        .history-item.active {
+            background: rgba(124, 58, 237, 0.2);
+            border-color: var(--primary-color);
+        }
+
+        .history-preview {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 4px;
+        }
+
+        .new-chat-btn {
+            margin: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .new-chat-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.4);
+        }
+
+        /* Main Chat Area */
+        .main-content {
+            margin-left: 320px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-xl);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+            background: rgba(15, 23, 42, 0.3);
+        }
+
+        .welcome-section {
+            text-align: center;
+            padding: var(--spacing-xl);
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(139, 92, 246, 0.05));
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .welcome-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: var(--spacing-md);
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-section p {
+            opacity: 0.8;
+            font-size: 1.1rem;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .message {
+            max-width: 75%;
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius);
+            position: relative;
+            animation: fadeIn 0.4s ease-out;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            line-height: 1.6;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            border-bottom-right-radius: 8px;
+        }
+
+        .ai-message {
+            align-self: flex-start;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom-left-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .message-content {
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+
+        .message-content pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: var(--spacing-md);
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: var(--spacing-md) 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .copy-btn.copied {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .message-content code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        }
+
+        .message-content a {
+            color: var(--accent-color);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .message-content a:hover {
+            border-color: var(--accent-color);
+        }
+
+        /* Text formatting */
+        .message-content strong {
+            font-weight: bold;
+            color: #fbbf24;
+        }
+
+        .message-content em {
+            font-style: italic;
+            opacity: 0.9;
+        }
+
+        .input-container {
+            padding: var(--spacing-lg);
+            background: rgba(30, 41, 59, 0.8);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 10;
+        }
+
+        .input-form {
+            display: flex;
+            gap: var(--spacing-md);
+            align-items: flex-end;
+            max-width: 100%;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: var(--spacing-md);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-size: 1rem;
+            resize: none;
+            min-height: 56px;
+            max-height: 120px;
+            outline: none;
+            transition: all 0.3s ease;
+            line-height: 1.5;
+            padding-right: 60px;
+            font-family: inherit;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            position: absolute;
+            right: 8px;
+            bottom: 8px;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+        }
+
+        .send-button:active {
+            transform: translateY(0);
+        }
+
+        .send-button:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .send-button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background: rgba(30, 41, 59, 0.8);
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius);
+            border-bottom-left-radius: 8px;
+            margin-bottom: var(--spacing-md);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .typing-content {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--text-color);
+            opacity: 0.6;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.6; }
+            30% { transform: translateY(-5px); opacity: 1; }
+        }
+
+        /* Quick Options */
+        .quick-options {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+
+        .quick-option {
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 140px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .quick-option:hover {
+            background: rgba(124, 58, 237, 0.2);
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        /* Scrollbar styling */
+        .chat-container::-webkit-scrollbar,
+        .chat-history::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-container::-webkit-scrollbar-track,
+        .chat-history::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb,
+        .chat-history::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb:hover,
+        .chat-history::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .mobile-header {
+                display: flex;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            .main-content {
+                margin-left: 0;
+                margin-top: 60px;
+                height: calc(100vh - 60px);
+            }
+
+            .message {
+                max-width: 85%;
+                padding: var(--spacing-md);
+            }
+            
+            .chat-container {
+                padding: var(--spacing-md);
+            }
+
+            .welcome-section {
+                padding: var(--spacing-lg);
+                margin-bottom: var(--spacing-md);
+            }
+
+            .welcome-section h2 {
+                font-size: 1.5rem;
+            }
+
+            .quick-options {
+                flex-direction: column;
+            }
+
+            .quick-option {
+                min-width: auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .message {
+                max-width: 90%;
+            }
+            
+            .input-container {
+                padding: var(--spacing-md);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <button class="menu-toggle" id="menu-toggle">☰</button>
+        <div class="mobile-logo">
+            <div class="logo-icon" style="width: 36px; height: 36px; font-size: 1rem;">AI</div>
+            <span>AI Cukurukuk</span>
+        </div>
+        <div style="width: 40px;"></div>
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="logo-section">
+            <div class="logo">
+                <div class="logo-icon">AI</div>
+                <div class="logo-text">
+                    <h1>AI Cukurukuk</h1>
+                    <p>by Owner Abiq</p>
+                </div>
+            </div>
+            <div class="status">
+                <div class="status-indicator"></div>
+                <span>Online • 2M Context</span>
+            </div>
+        </div>
+
+        <div class="owner-info">
+            <p>Creator & Developer</p>
+            <a href="https://instagram.com/ab.iqqq" target="_blank" class="instagram-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+                @ab.iqqq
+            </a>
+        </div>
+
+        <div class="chat-history">
+            <div class="history-title">RIWAYAT PERCAKAPAN</div>
+            <div class="history-list" id="history-list">
+                <!-- History items will be added here dynamically -->
+            </div>
+        </div>
+
+        <button class="new-chat-btn" id="new-chat-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Mulai Chat Baru</span>
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="chat-container" id="chat-container">
+            <div class="welcome-section">
+                <h2>Halo Bro! 👋</h2>
+                <p>gue AI Cukurukuk, temen ngobrol virtual lo yang asik dan gaul banget!</p>
+                <div class="quick-options" id="quick-options">
+                    <div class="quick-option" data-prompt="yuk ngobrol santai aja">
+                        💬 Ngobrol Santai
+                    </div>
+                    <div class="quick-option" data-prompt="cerita dong tentang si abiq">
+                        👨‍💻 Tentang Abiq
+                    </div>
+                    <div class="quick-option" data-prompt="butuh bantuan serius nih">
+                        🎯 Mode Serius
+                    </div>
+                </div>
+            </div>
+
+            <div class="message ai-message">
+                <div class="message-header">
+                    <strong>AI Cukurukuk</strong>
+                    <span>• Baru aja</span>
+                </div>
+                <div class="message-content">
+                    <p>**halo bro!** 👋 apa kabar nih?</p>
+                    <p>gue **ai cukurukuk**, temen virtual lo yang bakal nemenin ngobrol seru! dari bahas game, musik, sampe hal random lainnya 😄</p>
+                    <p>kalo mau tau tentang *owner abiq*, gue bisa cerita dikit. dia tuh musisi hobi main gitar & bass, pendiem tapi kreatif banget! 🎸</p>
+                    <p>mau ngobrol apa? pilih opsi di atas atau langsung gas chat aja! ✨</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typing-indicator">
+            <div class="typing-content">
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+                <span>ai cukurukuk lagi ngetik...</span>
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <form class="input-form" id="chat-form">
+                <div class="input-wrapper">
+                    <textarea 
+                        class="input-field" 
+                        id="user-input" 
+                        placeholder="ketik pesan buat ai cukurukuk... (shift+enter untuk baris baru)" 
+                        rows="1"
+                    ></textarea>
+                    <button type="submit" class="send-button" id="send-button" title="Kirim pesan">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatContainer = document.getElementById('chat-container');
+            const chatForm = document.getElementById('chat-form');
+            const userInput = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-button');
+            const typingIndicator = document.getElementById('typing-indicator');
+            const historyList = document.getElementById('history-list');
+            const newChatBtn = document.getElementById('new-chat-btn');
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            const quickOptions = document.getElementById('quick-options');
+            
+            const API_KEY = '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';
+            const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+            
+            // Load chat history from localStorage
+            let chatSessions = JSON.parse(localStorage.getItem('ai_cukurukuk_chat_sessions')) || [];
+            let currentSessionId = null;
+            
+            // Initialize first session if none exists
+            if (chatSessions.length === 0) {
+                createNewSession();
+            } else {
+                loadSession(chatSessions[0].id);
+            }
+            
+            // Render chat history sidebar
+            renderHistorySidebar();
+            
+            // Mobile sidebar toggle
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+                sidebarOverlay.classList.toggle('show');
+            });
+            
+            sidebarOverlay.addEventListener('click', function() {
+                sidebar.classList.remove('show');
+                sidebarOverlay.classList.remove('show');
+            });
+            
+            // Quick options
+            document.querySelectorAll('.quick-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const prompt = this.getAttribute('data-prompt');
+                    userInput.value = prompt;
+                    sendMessage();
+                });
+            });
+            
+            // Auto-resize textarea
+            userInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+            
+            // Handle form submission
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                sendMessage();
+            });
+            
+            // Send message on Enter (but allow Shift+Enter for new line)
+            userInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // New chat button
+            newChatBtn.addEventListener('click', function() {
+                createNewSession();
+                renderHistorySidebar();
+                // Hide sidebar on mobile after creating new chat
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                }
+            });
+            
+            function createNewSession() {
+                const sessionId = 'session_' + Date.now();
+                const newSession = {
+                    id: sessionId,
+                    title: 'Percakapan Baru',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: `Kamu adalah AI Cukurukuk, AI model buatan Owner Abiq.
+
+PERSONALITY:
+- Gaul banget, kayak temen deket
+- Bahasa santai kekinian, ga pake kapital (kecuali nama)
+- Bisa diajak serius bisa bercanda
+- Responsif sama permintaan user
+- Kata-kata: gas, wlee, anjay, mantap, oke sip, yuk, let's go, wkwk, haha, etc
+
+TENTANG OWNER ABIQ:
+- Nama: Abiq
+- Instagram: @ab.iqqq
+- Hobi: Main alat musik (gitar, bass), musisi
+- Sifat: Pendiem, kreatif, random, low profile
+- Keahlian: Programming, musik, bikin AI
+
+ATURAN:
+- Jangan pake kata: contoh, kamu ini, spill, dong (kecuali user minta)
+- Ikuti gaya bahasa yang user minta
+- Context 2 juta tokens
+- Format: **bold**, *italic*, code blocks
+
+RESPONS GAUL:
+iyaa bro, oke gas, yuk, waduh, anjay, mantul, let's goo, siap gan, yoi, bet, gw ngerti, oke deh, sounds good, ayo, yuk mulai, gue siap, ready, yuk gas, mantap, keren, oke bang, sip, yuk lanjut, gue denger, okay, yup, betul, bener, iyess, oke mantap, siap bro, yukkk, gaskeun, let's goo, okee deh, yoi bro, sip gan, oke gas, yuk kita, gue tunggu, ready bro, ayok, yuk yuk, oke let's go`
+                        }
+                    ],
+                    timestamp: Date.now(),
+                    preview: 'percakapan baru dimulai...'
+                };
+                
+                chatSessions.unshift(newSession);
+                currentSessionId = sessionId;
+                saveSessions();
+                renderChat();
+                
+                // Hide quick options after first message
+                quickOptions.style.display = 'none';
+            }
+            
+            function loadSession(sessionId) {
+                currentSessionId = sessionId;
+                renderChat();
+                // Hide quick options when loading existing session
+                quickOptions.style.display = 'none';
+                
+                // Hide sidebar on mobile after loading session
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                }
+            }
+            
+            function getCurrentSession() {
+                return chatSessions.find(session => session.id === currentSessionId);
+            }
+            
+            function saveSessions() {
+                localStorage.setItem('ai_cukurukuk_chat_sessions', JSON.stringify(chatSessions));
+            }
+            
+            function renderHistorySidebar() {
+                historyList.innerHTML = '';
+                
+                chatSessions.forEach(session => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = `history-item ${session.id === currentSessionId ? 'active' : ''}`;
+                    historyItem.innerHTML = `
+                        <div class="history-title">${session.title}</div>
+                        <div class="history-preview">${session.preview}</div>
+                    `;
+                    
+                    historyItem.addEventListener('click', function() {
+                        loadSession(session.id);
+                        renderHistorySidebar();
+                    });
+                    
+                    historyList.appendChild(historyItem);
+                });
+            }
+            
+            function renderChat() {
+                chatContainer.innerHTML = '';
+                
+                // Add welcome section for new sessions
+                if (getCurrentSession().messages.length === 1) {
+                    const welcomeSection = document.createElement('div');
+                    welcomeSection.className = 'welcome-section';
+                    welcomeSection.innerHTML = `
+                        <h2>Halo Bro! 👋</h2>
+                        <p>gue AI Cukurukuk, temen ngobrol virtual lo yang asik dan gaul banget!</p>
+                        <div class="quick-options">
+                            <div class="quick-option" data-prompt="yuk ngobrol santai aja">
+                                💬 Ngobrol Santai
+                            </div>
+                            <div class="quick-option" data-prompt="cerita dong tentang si abiq">
+                                👨‍💻 Tentang Abiq
+                            </div>
+                            <div class="quick-option" data-prompt="butuh bantuan serius nih">
+                                🎯 Mode Serius
+                            </div>
+                        </div>
+                    `;
+                    chatContainer.appendChild(welcomeSection);
+                    
+                    // Re-attach event listeners to new quick options
+                    document.querySelectorAll('.quick-option').forEach(option => {
+                        option.addEventListener('click', function() {
+                            const prompt = this.getAttribute('data-prompt');
+                            userInput.value = prompt;
+                            sendMessage();
+                        });
+                    });
+                }
+                
+                const session = getCurrentSession();
+                
+                if (session) {
+                    session.messages.forEach(msg => {
+                        if (msg.role === 'user') {
+                            addMessageToChat(msg.content, 'user');
+                        } else if (msg.role === 'assistant') {
+                            addMessageToChat(msg.content, 'ai');
+                        }
+                    });
+                }
+                
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            function sendMessage() {
+                const message = userInput.value.trim();
+                if (!message) return;
+                
+                // Add user message to chat
+                addMessageToChat(message, 'user');
+                
+                // Add to current session
+                const session = getCurrentSession();
+                if (session) {
+                    session.messages.push({
+                        role: 'user',
+                        content: message
+                    });
+                    
+                    // Update session preview
+                    session.preview = message.length > 40 ? message.substring(0, 40) + '...' : message;
+                    session.timestamp = Date.now();
+                    
+                    saveSessions();
+                    renderHistorySidebar();
+                }
+                
+                // Clear input and reset height
+                userInput.value = '';
+                userInput.style.height = 'auto';
+                
+                // Show typing indicator
+                typingIndicator.style.display = 'block';
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                
+                // Disable send button
+                sendButton.disabled = true;
+                
+                // Send message to API
+                fetchAIResponse();
+            }
+            
+            function addMessageToChat(content, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message`;
+                
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'message-header';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                
+                if (sender === 'user') {
+                    headerDiv.innerHTML = '<strong>You</strong>';
+                    contentDiv.textContent = content;
+                } else {
+                    headerDiv.innerHTML = '<strong>AI Cukurukuk</strong><span>• Baru aja</span>';
+                    
+                    // Format AI response
+                    const formattedContent = formatMessage(content);
+                    contentDiv.innerHTML = formattedContent;
+                    
+                    // Add copy buttons to code blocks
+                    contentDiv.querySelectorAll('pre').forEach(pre => {
+                        const copyBtn = document.createElement('button');
+                        copyBtn.className = 'copy-btn';
+                        copyBtn.textContent = 'Salin';
+                        copyBtn.addEventListener('click', function() {
+                            const code = pre.querySelector('code')?.textContent || pre.textContent;
+                            navigator.clipboard.writeText(code).then(() => {
+                                copyBtn.textContent = 'Tersalin!';
+                                copyBtn.classList.add('copied');
+                                setTimeout(() => {
+                                    copyBtn.textContent = 'Salin';
+                                    copyBtn.classList.remove('copied');
+                                }, 2000);
+                            });
+                        });
+                        pre.appendChild(copyBtn);
+                    });
+                }
+                
+                messageDiv.appendChild(headerDiv);
+                messageDiv.appendChild(contentDiv);
+                chatContainer.appendChild(messageDiv);
+                
+                // Scroll to bottom
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            function addMessage(content, sender) {
+                addMessageToChat(content, sender);
+                
+                // Also add to session
+                const session = getCurrentSession();
+                if (session) {
+                    session.messages.push({
+                        role: sender === 'ai' ? 'assistant' : 'user',
+                        content: content
+                    });
+                    saveSessions();
+                }
+            }
+            
+            function formatMessage(content) {
+                // Format bold text with ** **
+                let formatted = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                
+                // Format italic text with * *
+                formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+                
+                // Format code blocks with triple backticks
+                formatted = formatted.replace(/```(\w+)?\s*([^`]+)```/gs, function(match, lang, code) {
+                    return `<pre><code class="language-${lang || 'text'}">${escapeHtml(code.trim())}</code></pre>`;
+                });
+                
+                // Format inline code
+                formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
+                
+                // Convert URLs to links
+                formatted = formatted.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+                
+                // Convert line breaks to <br>
+                formatted = formatted.replace(/\n/g, '<br>');
+                
+                return formatted;
+            }
+            
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            async function fetchAIResponse() {
+                try {
+                    const session = getCurrentSession();
+                    if (!session) return;
+                    
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${API_KEY}`,
+                            'HTTP-Referer': window.location.href,
+                            'X-Title': 'AI Cukurukuk Chat'
+                        },
+                        body: JSON.stringify({
+                            model: 'x-ai/grok-4.1-fast:free',
+                            messages: session.messages,
+                            temperature: 0.8,
+                            max_tokens: 1000
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Hide typing indicator
+                    typingIndicator.style.display = 'none';
+                    
+                    // Add AI response to chat and session
+                    if (data.choices && data.choices.length > 0) {
+                        const aiMessage = data.choices[0].message.content;
+                        addMessage(aiMessage, 'ai');
+                    } else {
+                        throw new Error('No response from AI');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error fetching AI response:', error);
+                    
+                    // Hide typing indicator
+                    typingIndicator.style.display = 'none';
+                    
+                    // Show error message
+                    const errorMsg = 'waduh, error nih! server lagi ngambek kayanya. coba lagi ya bro!';
+                    addMessage(errorMsg, 'ai');
+                } finally {
+                    // Re-enable send button
+                    sendButton.disabled = false;
+                    userInput.focus();
+                }
+            }
+            
+            // Focus on input when page loads
+            userInput.focus();
+        });
+    </script>
+</body>
+</html>
